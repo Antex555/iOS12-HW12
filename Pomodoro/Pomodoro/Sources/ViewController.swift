@@ -14,7 +14,7 @@ class ViewController: UIViewController, CAAnimationDelegate {
     var timer = Timer()
     var isTimerStarted = false
     var isAnimationStarted = false
-    var time = 25
+    var time = 10
     
     // MARK: - Lifecycle
     
@@ -30,34 +30,9 @@ class ViewController: UIViewController, CAAnimationDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupView()
         setupHierarhy()
         setupLayout()
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-    }
-    
-    override func viewWillLayoutSubviews() {
-        super.viewWillLayoutSubviews()
-    }
-    
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-    }
-    
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-    }
+    }    
     
     // MARK: - UI
     
@@ -73,8 +48,7 @@ class ViewController: UIViewController, CAAnimationDelegate {
     
     private lazy var playAndStopButton: UIButton = {
         let button = UIButton()
-        button.backgroundColor = .clear
-        button.setImage(.playBtn, for: .normal)
+        button.setImage(.playBtnRed, for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(playButtonTapped), for: .touchUpInside)
         return button
@@ -88,9 +62,9 @@ class ViewController: UIViewController, CAAnimationDelegate {
                                   startAngle: -90.degreesToRadians,
                                   endAngle: 270.degreesToRadians,
                                   clockwise: true).cgPath
-        shape.strokeColor = UIColor.white.cgColor
+        shape.strokeColor = UIColor.gray.cgColor
         shape.fillColor = UIColor.clear.cgColor
-        shape.lineWidth = 7
+        shape.lineWidth = 1
         return shape
     }()
     
@@ -104,17 +78,14 @@ class ViewController: UIViewController, CAAnimationDelegate {
                                   clockwise: true).cgPath
         shape.strokeColor = UIColor.red.cgColor
         shape.fillColor = UIColor.clear.cgColor
-        shape.lineWidth = 5
+        shape.lineWidth = 2
         return shape
     }()
     
     // MARK: - Setup
     
-    private func setupView() {
-        
-    }
-    
     private func setupHierarhy() {
+        
         view.addSubviews([
             timeLabel,
             playAndStopButton
@@ -152,7 +123,7 @@ class ViewController: UIViewController, CAAnimationDelegate {
         animation.keyPath = "strokeEnd"
         animation.fromValue = 0
         animation.toValue = 1
-        animation.duration = 25
+        animation.duration = CFTimeInterval(time)
         animation.delegate = self
         animation.isRemovedOnCompletion = false
         animation.isAdditive = true
@@ -176,7 +147,8 @@ class ViewController: UIViewController, CAAnimationDelegate {
     }
     
     private func resumeAnimation() {
-        let pausedTime = foreProgressLayer.timeOffset
+//        let pausedTime = foreProgressLayer.timeOffset
+        let pausedTime = foreProgressLayer.convertTime(CACurrentMediaTime(), from: nil)
         foreProgressLayer.speed = 1.0
         foreProgressLayer.timeOffset = 0.0
         foreProgressLayer.beginTime = 0.0
@@ -194,7 +166,7 @@ class ViewController: UIViewController, CAAnimationDelegate {
     }
     
     private func startTimer() {
-        timer = Timer.scheduledTimer(timeInterval: 1, 
+        timer = Timer.scheduledTimer(timeInterval: 1,
                                      target: self,
                                      selector: (#selector(updateTimer)),
                                      userInfo: nil,
@@ -204,13 +176,27 @@ class ViewController: UIViewController, CAAnimationDelegate {
     @objc
     private func updateTimer() {
         if time < 1 {
-            playAndStopButton.setImage(.playBtn, for: .normal)
-            timer.invalidate()
-            time = 25
-            isTimerStarted = false
-            timeLabel.text = "25:00"
+            if timeLabel.textColor == .green {
+                playAndStopButton.setImage(.playBtnRed, for: .normal)
+                timer.invalidate()
+                time = 10
+                foreProgressLayer.strokeColor = UIColor.red.cgColor
+                isTimerStarted = false
+                timeLabel.text = "25:00"
+                timeLabel.textColor = .red
+            } else {
+                playAndStopButton.setImage(.playBtnGreen, for: .normal)
+                timer.invalidate()
+                time = 5
+                foreProgressLayer.strokeColor = UIColor.green.cgColor
+                isTimerStarted = false
+                timeLabel.text = "5:00"
+                timeLabel.textColor = .green
+            }
+            
         } else {
             time -= 1
+            print("1")
             timeLabel.text = formatTimer()
         }
     }
@@ -220,7 +206,6 @@ class ViewController: UIViewController, CAAnimationDelegate {
         let seconds = Int(time) % 60
         return String(format: "%02i:%02i", minutes, seconds)
     }
-    
 
     @objc 
     private func playButtonTapped() {
@@ -229,12 +214,20 @@ class ViewController: UIViewController, CAAnimationDelegate {
             startResumeAnimation()
             startTimer()
             isTimerStarted = true
-            playAndStopButton.setImage(.pauseBtn, for: .normal)
+            if foreProgressLayer.strokeColor == UIColor.red.cgColor {
+                playAndStopButton.setImage(.pauseBtnRed , for: .normal)
+            } else {
+                playAndStopButton.setImage(.pauseBtnGreen, for: .normal)
+                }
         } else {
             pauseAnimation()
             timer.invalidate()
             isTimerStarted = false
-            playAndStopButton.setImage(.playBtn, for: .normal)
+            if foreProgressLayer.strokeColor == UIColor.red.cgColor {
+                playAndStopButton.setImage(.playBtnRed, for: .normal)
+            } else {
+                playAndStopButton.setImage(.playBtnGreen, for: .normal)
+            }
         }
     }
     
